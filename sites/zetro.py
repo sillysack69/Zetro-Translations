@@ -32,13 +32,31 @@ def book_metadata(soup: BeautifulSoup) -> Dict:
     translator = translator_tag.get_text(strip=True) if translator_tag else ""
 
     synopsis_div = soup.find('div', {'class': 'summary__content show-more'})
-    synopsis = ""
+    synopsis_html = ""
     if synopsis_div:
-        for tag in synopsis_div.find_all(['h1', 'h2', 'blockquote', 'a']):
+        # Remove unwanted tags but keep <p>
+        for tag in synopsis_div.find_all(['h1', 'h2', 'blockquote', 'a', 'strong', 'hr']):
             tag.decompose()
-        synopsis = synopsis_div.get_text(separator="\n", strip=True)
-        if synopsis and not synopsis[-1].isalpha():
-            synopsis += '.'
+
+        # Filter out <p> tags containing unwanted lines before joining
+        paragraphs = []
+        for p in synopsis_div.find_all('p'):
+            text = p.get_text(strip=True)
+            if any(phrase in text for phrase in ["Next unlock", "Like what I do"]):
+                continue
+            paragraphs.append(str(p))
+
+        synopsis_html = "".join(paragraphs)
+
+        # Optionally add a trailing '.' inside the last <p> if last char is a letter
+        # Get all text combined
+        text_content = "".join(p.get_text() for p in synopsis_div.find_all('p')).strip()
+        if text_content and text_content[-1].isalpha() and not text_content.endswith('.'):
+            # Append '.' just before closing tag of last paragraph
+            if paragraphs:
+                if paragraphs[-1].endswith("</p>"):
+                    paragraphs[-1] = paragraphs[-1][:-4] + '.' + "</p>"
+                    synopsis_html = "".join(paragraphs)
 
     genres_tag = soup.find('div', {'class': 'genres-content'})
     genres = genres_tag.get_text(strip=True) if genres_tag else ""
@@ -55,12 +73,13 @@ def book_metadata(soup: BeautifulSoup) -> Dict:
         "title": title,
         "author": author,
         "translator": translator,
-        "synopsis": synopsis,
+        "synopsis": synopsis_html,
         "genres": genres,
         "cover": cover,
         "alternate": alternateTitle,
     }
     return meta
+
 
 
 
