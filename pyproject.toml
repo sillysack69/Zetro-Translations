@@ -1,0 +1,19 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="zetropub",
+    version="0.1.0",
+    py_modules=["zetropub"],
+    install_requires=[
+        "requests",
+        "beautifulsoup4",
+        "lxml",
+        "Pillow",
+        "ebooklib"
+    ],
+    entry_points={
+        "console_scripts": [
+            "zetropub=zetropub:cli",
+        ],
+    },
+)
