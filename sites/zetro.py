@@ -33,49 +33,47 @@ def book_metadata(soup: BeautifulSoup) -> Dict:
 
     synopsis_div = soup.find('div', {'class': 'summary__content show-more'})
     synopsis_html = ""
+
     if synopsis_div:
-        # Remove unwanted tags but keep <p>
+        # Remove unwanted tags fully
         for tag in synopsis_div.find_all(['h1', 'h2', 'blockquote', 'a']):
             tag.decompose()
 
-        # Convert all <span> tags to <p> tags
+        # Unwrap all <span> tags (keep text, remove tag)
         for span in synopsis_div.find_all('span'):
-            # Create a new <p> tag with the same content
-            p_tag = soup.new_tag("p")
-            p_tag.string = span.get_text()
-            # Replace span with this new <p>
-            span.replace_with(p_tag)
+            span.unwrap()
 
-        # Filter out <p> tags containing unwanted lines before joining
-        paragraphs = []
-        for p in synopsis_div.find_all('p'):
-            text = p.get_text(strip=True)
-            if any(phrase in text for phrase in ["Next unlock", "Like what I do"]):
-                continue
-            paragraphs.append(str(p))
+        allowed_parts = []
+        for elem in synopsis_div.children:
+            # If it's a <p> tag
+            if getattr(elem, "name", None) == 'p':
+                text = elem.get_text(strip=True)
+                if any(phrase in text for phrase in ["Next unlock", "Like what I do"]):
+                    continue
+                allowed_parts.append(str(elem))
+            # If it's a NavigableString or text node (no .name)
+            elif isinstance(elem, str) or elem.name is None:
+                text = str(elem).strip()
+                if text and not any(phrase in text for phrase in ["Next unlock", "Like what I do"]):
+                    # Wrap bare text in <p> for consistency
+                    allowed_parts.append(f"<p>{text}</p>")
+            # Ignore other tags
 
-        synopsis_html = "".join(paragraphs)
+        # Join all allowed parts
+        synopsis_html = "".join(allowed_parts)
 
-        # Optionally add a trailing '.' inside the last <p> if last char is a letter
-        # Get all text combined
-        text_content = "".join(p.get_text() for p in synopsis_div.find_all('p')).strip()
-        if text_content and text_content[-1].isalpha() and not text_content.endswith('.'):
-            # Append '.' just before closing tag of last paragraph
-            if paragraphs:
-                if paragraphs[-1].endswith("</p>"):
-                    paragraphs[-1] = paragraphs[-1][:-4] + '.' + "</p>"
-                    synopsis_html = "".join(paragraphs)
+        # Add trailing period inside last paragraph if needed
+        if allowed_parts:
+            last_p_text = BeautifulSoup(allowed_parts[-1], 'html.parser').get_text().strip()
+            if last_p_text and last_p_text[-1].isalpha() and not last_p_text.endswith('.'):
+                allowed_parts[-1] = allowed_parts[-1][:-4] + '.' + '</p>'
+                synopsis_html = "".join(allowed_parts)
 
     genres_tag = soup.find('div', {'class': 'genres-content'})
     genres = genres_tag.get_text(strip=True) if genres_tag else ""
 
     cover_tag = soup.find('div', {'class': 'summary_image'})
     cover = cover_tag.find('img')['src'].split('?')[0] if cover_tag and cover_tag.find('img') else None
-
-    alternateTitle = None
-    summary_content = soup.find_all('div', {'class': 'summary-content'})
-    if len(summary_content) >= 3:
-        alternateTitle = summary_content[2].get_text(strip=True)
 
     meta = {
         "title": title,
@@ -84,11 +82,8 @@ def book_metadata(soup: BeautifulSoup) -> Dict:
         "synopsis": synopsis_html,
         "genres": genres,
         "cover": cover,
-        "alternate": alternateTitle,
     }
     return meta
-
-
 
 
 def get_chapters(novel_id: str) -> str:
