@@ -82,7 +82,25 @@ epub_downloader/
       - produces `chapters: List[(title, paras)]`,
       - constructs `EpubBuilder(...)` with appropriate options,
       - calls `.build(save_as)`.
-3. Add the site name to `main.py` `--site` choices (or modify CLI to auto-discover modules in `sites/`).
+3. Add the new site's domain and module name to the SUPPORTED_SITES dict. Create a new site module in your sites/ folder, named as the module name you assign. Make sure your new module exposes a run(url, range_, save_as) function matching the interface.
+
+### Example
+- Add new site domain and module name to `SUPPORTED_SITES`:
+```
+SUPPORTED_SITES = {
+    "zetrotranslation.com": "zetro",
+    "zeustranslations.blogspot.com": "zeus",
+    "example.com": "example",         # Add this line
+    "another-site.org": "another",   # Add as many as you want
+}
+```
+- Create `sites/example.py` module:
+```
+def run(url, range_, save_as):
+    # Your scraping and EPUB building logic for example.com here
+    print(f"Running example.com scraper for {url}")
+    # ...
+```
 
 ## Differences preserved between sites
 - **Zetro**: always creates a cover page and places it as the first spine element (original behaviour preserved).
