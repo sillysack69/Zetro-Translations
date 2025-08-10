@@ -84,7 +84,7 @@ def chapters_toc(soup: BeautifulSoup):
             chap_title = re.sub(r'^[\(\[\-\s]*', '', chap_title)
             chap_title = re.sub(r'[\)\]\s]*$', '', chap_title)
             if not chap_title:
-                chap_title = "Untitled"
+                return f"Chapter {chap_num}"
             return f"Chapter {chap_num}: {chap_title}"
         return title.strip()
 
