@@ -37,6 +37,8 @@ def book_metadata(soup: BeautifulSoup) -> Dict:
         for tag in synopsis_div.find_all(['h1', 'h2', 'blockquote', 'a']):
             tag.decompose()
         synopsis = synopsis_div.get_text(strip=True)
+        if not synopsis.endswith('.'):
+		synopsis += '.'
 
     genres_tag = soup.find('div', {'class': 'genres-content'})
     genres = genres_tag.get_text(strip=True) if genres_tag else ""
