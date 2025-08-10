@@ -23,22 +23,32 @@ def novel_id_from_soup(soup: BeautifulSoup) -> str:
 
 
 def book_metadata(soup: BeautifulSoup) -> Dict:
-    title = soup.find('h1').text.strip()
-    author = (soup.find('div', {'class': 'author-content'}) or "").get_text(strip=True)
-    translator = (soup.find('div', {'class': 'artist-content'}) or "").get_text(strip=True)
+    title = soup.find('h1').text.strip() if soup.find('h1') else "Untitled"
+
+    author_tag = soup.find('div', {'class': 'author-content'})
+    author = author_tag.get_text(strip=True) if author_tag else ""
+
+    translator_tag = soup.find('div', {'class': 'artist-content'})
+    translator = translator_tag.get_text(strip=True) if translator_tag else ""
+
     synopsis_div = soup.find('div', {'class': 'summary__content show-more'})
     synopsis = ""
     if synopsis_div:
         for tag in synopsis_div.find_all(['h1', 'h2', 'blockquote', 'a']):
             tag.decompose()
         synopsis = synopsis_div.get_text(strip=True)
-    genres = (soup.find('div', {'class': 'genres-content'}) or "").get_text(strip=True)
-    cover = (soup.find('div', {'class': 'summary_image'}) or {}).find('img')['src'].split('?')[0] \
-        if soup.find('div', {'class': 'summary_image'}) else None
+
+    genres_tag = soup.find('div', {'class': 'genres-content'})
+    genres = genres_tag.get_text(strip=True) if genres_tag else ""
+
+    cover_tag = soup.find('div', {'class': 'summary_image'})
+    cover = cover_tag.find('img')['src'].split('?')[0] if cover_tag and cover_tag.find('img') else None
+
     alternateTitle = None
     summary_content = soup.find_all('div', {'class': 'summary-content'})
     if len(summary_content) >= 3:
         alternateTitle = summary_content[2].get_text(strip=True)
+
     meta = {
         "title": title,
         "author": author,
@@ -49,6 +59,7 @@ def book_metadata(soup: BeautifulSoup) -> Dict:
         "alternate": alternateTitle,
     }
     return meta
+
 
 
 def get_chapters(novel_id: str) -> str:
