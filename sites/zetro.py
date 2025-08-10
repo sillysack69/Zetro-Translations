@@ -35,8 +35,16 @@ def book_metadata(soup: BeautifulSoup) -> Dict:
     synopsis_html = ""
     if synopsis_div:
         # Remove unwanted tags but keep <p>
-        for tag in synopsis_div.find_all(['h1', 'h2', 'blockquote', 'a', 'strong', 'hr']):
+        for tag in synopsis_div.find_all(['h1', 'h2', 'blockquote', 'a']):
             tag.decompose()
+
+        # Convert all <span> tags to <p> tags
+        for span in synopsis_div.find_all('span'):
+            # Create a new <p> tag with the same content
+            p_tag = soup.new_tag("p")
+            p_tag.string = span.get_text()
+            # Replace span with this new <p>
+            span.replace_with(p_tag)
 
         # Filter out <p> tags containing unwanted lines before joining
         paragraphs = []
