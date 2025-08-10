@@ -13,7 +13,7 @@ Each site's scraping logic is isolated in `sites/<site>.py`. Common EPUB creatio
 ## Features
 
 - Modular design — add new site scrapers easily.
-- CLI interface (`main.py`) with simple options: `--site`, `--url`, `--range`, `--save`.
+- CLI interface (`main.py`) with simple options: `<url>`, `<range>`, `<save>`.
 - Supports chapter range selection: `1`, `1-5`, `all`.
 - Handles optional cover inclusion and site-specific EPUB structure differences.
 - Basic retry logic for network requests and graceful logging.
