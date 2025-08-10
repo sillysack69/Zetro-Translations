@@ -45,12 +45,11 @@ Each site's scraping logic is isolated in `sites/<site>.py`. Common EPUB creatio
 ## Usage
 
 ```
-python main.py --site zetro --url "https://zetrotranslation.com/novel/..." --range all --save "book-name"
-python main.py --site zeus --url "https://zeustranslations.blogspot.com/...html" --range 1-5 --save "book-name"
+python main.py --url "https://zetrotranslation.com/novel/..." --range all --save "book-name"
+python main.py --url "https://zeustranslations.blogspot.com/...html" --range 1-5 --save "book-name"
 ```
 
 Options:
-- `--site` — `zetro` or `zeus`
 - `--url` — novel page URL
 - `--range` — `all` (default), single index (`5`), or range (`1-10`)
 - `--save` — filename (without `.epub`)
