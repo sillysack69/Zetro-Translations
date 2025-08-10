@@ -123,7 +123,9 @@ def fetch_chapter_paragraphs(chapters_toc: dict, selection: str) -> List[Tuple[s
                 if (text.strip() == "" or text == '\xa0'
                         or re.match(r'TL:', text)
                         or re.match(r'_+', text)
-                        or re.match(r'\bChapter\s*\d+', text, re.IGNORECASE)):
+                        or re.match(r'\bChapter\s*\d+', text, re.IGNORECASE)
+                        or re.match(r'[ー\-\s―]+', text)
+                   ):
                     continue
                 # cleanup stray underscores after <br> like original
                 html_str = str(p)
