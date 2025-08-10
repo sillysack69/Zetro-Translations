@@ -81,3 +81,6 @@ These differences are implemented by passing `include_cover_page` and `cover_fir
 - If pages change layout, selectors may break. Update the relevant site module.
 - For large books, network timeouts: increase timeouts or re-run for missing chapters.
 - If cover download fails, EPUB will be generated without a cover.
+
+## Contributing
+Anyone that can contribute is welcome to expand this library.
