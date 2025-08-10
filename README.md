@@ -20,15 +20,28 @@ Each site's scraping logic is isolated in `sites/<site>.py`. Common EPUB creatio
 
 ---
 
-## Requirements
+## Installation
 
-- Python 3.9+ recommended
-- Install dependencies:
-
-```
-pip install -r requirements.txt
-```
-
+1. **Clone the repository**
+   ```
+   git clone https://github.com/sillysack69/Zetro-Translations.git
+   cd Zetro-Translations
+   ```
+2. **(Optional) Create a virtual environment**
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+3. **Install dependencies**
+   ```
+   pip install -r requirements.txt
+   ```
+4. **Verify installation**
+   ```
+   python main.py --help
+   ```
+   If the help text appears, the installation was successful.
+   
 ## Usage
 
 ```
