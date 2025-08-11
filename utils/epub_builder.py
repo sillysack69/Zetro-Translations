@@ -100,6 +100,7 @@ class EpubBuilder:
         for img_tag in soup.find_all("img"):
             src = img_tag.get("src")
             src = src.split('?')[0]
+
             if not src:
                 continue
             abs_url = urljoin(base_url, src) if base_url else src
@@ -134,6 +135,7 @@ class EpubBuilder:
         h2 { margin-top: 2em; margin-bottom: 2em; }
         p { text-indent: 0; margin-top: 1.4em; margin-bottom: 1.4em; }
         hr { border: none; border-top: 2px solid #ccc; margin: 2em 0; }
+        img { max-width: 100%; height: auto; display: block; margin: 1em auto; }
         """
         style = epub.EpubItem(uid="style_nav", file_name="styles/style.css", media_type="text/css", content=css)
         book.add_item(style)
