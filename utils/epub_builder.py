@@ -1,11 +1,12 @@
 """
 EpubBuilder: unified EPUB creation with site-specific options.
 
-This builder intentionally supports:
+Now with:
  - optional cover download and inclusion
  - optional cover-as-first-page in spine
  - insertion of intro page (with synopsis & metadata)
  - adding chapters (list of (title, list_of_bs4_tags_or_strings))
+ - automatic downloading and embedding of chapter images
 """
 
 from ebooklib import epub
@@ -16,6 +17,8 @@ from io import BytesIO
 from PIL import Image
 import requests
 import os
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 logger = logging.getLogger("epub_downloader.epub_builder")
 
@@ -34,6 +37,10 @@ class EpubBuilder:
         self._synopsis: Optional[str] = None
         self._alternate_title: Optional[str] = None
         self._extra_links: Optional[List[dict]] = None
+
+        # New for image embedding
+        self._images = {}
+        self._image_counter = 1
 
     def set_cover_url(self, url: str):
         self._cover_url = url
@@ -65,11 +72,48 @@ class EpubBuilder:
             if img.mode in ("RGBA", "P"):
                 img = img.convert("RGB")
             buf = BytesIO()
-            img.save(buf, format="JPEG", quality=92)
+            img.save(buf, format="JPEG", quality=98)
             return buf.getvalue()
         except Exception as e:
             logger.warning("Failed to download/process cover: %s", e)
             return None
+
+    def _download_image(self, url: str) -> Optional[bytes]:
+        """Download image and convert to JPEG bytes."""
+        try:
+            logger.info("Downloading image: %s", url)
+            r = requests.get(url, timeout=20)
+            r.raise_for_status()
+            img = Image.open(BytesIO(r.content))
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            buf = BytesIO()
+            img.save(buf, format="JPEG", quality=98)
+            return buf.getvalue()
+        except Exception as e:
+            logger.warning("Failed to download image %s: %s", url, e)
+            return None
+
+    def _process_chapter_images(self, html_content: str, base_url: Optional[str] = None) -> str:
+        """Finds <img> tags, downloads them, and replaces src with local paths."""
+        soup = BeautifulSoup(html_content, "html.parser")
+        for img_tag in soup.find_all("img"):
+            src = img_tag.get("src")
+            src = src.split('?')[0]
+            if not src:
+                continue
+            abs_url = urljoin(base_url, src) if base_url else src
+            img_bytes = self._download_image(abs_url)
+            if not img_bytes:
+                continue
+            img_id = f"img_{self._image_counter}"
+            self._image_counter += 1
+            filename = f"images/{img_id}.jpg"
+            # Store image bytes for later adding to EPUB
+            self._images[filename] = img_bytes
+            # Replace src in HTML
+            img_tag["src"] = f"../{filename}"
+        return str(soup)
 
     def build(self, output_basename: str):
         book = epub.EpubBook()
@@ -89,7 +133,7 @@ class EpubBuilder:
         h1 { margin-bottom: 2em; }
         h2 { margin-top: 2em; margin-bottom: 2em; }
         p { text-indent: 0; margin-top: 1.4em; margin-bottom: 1.4em; }
-        hr { border: none; border-top: 2px solid #ccc; margin: 3em 0; }
+        hr { border: none; border-top: 2px solid #ccc; margin: 2em 0; }
         """
         style = epub.EpubItem(uid="style_nav", file_name="styles/style.css", media_type="text/css", content=css)
         book.add_item(style)
@@ -129,12 +173,17 @@ class EpubBuilder:
         chapter_items = []
         for idx, (title, paras) in enumerate(self._chapters, start=1):
             chap = epub.EpubHtml(title=title, file_name=f'xhtml/chap_{idx}.xhtml', lang=self.language)
-            # paras might be BeautifulSoup tags or strings
             body_html = "".join(str(p) for p in paras) if paras else ""
+            body_html = self._process_chapter_images(body_html)  # process images
             chap.content = f"<h2>{title}</h2>" + body_html + "<hr>"
             chap.add_link(href='../styles/style.css', rel='stylesheet', type='text/css')
             book.add_item(chap)
             chapter_items.append(chap)
+
+        # Add all downloaded images to the EPUB
+        for filename, content in self._images.items():
+            img_item = epub.EpubImage(uid=filename, file_name=filename, media_type="image/jpeg", content=content)
+            book.add_item(img_item)
 
         # TOC
         toc_list = []
