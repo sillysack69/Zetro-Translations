@@ -238,7 +238,7 @@ def fetch_chapter_paragraphs(chapters_toc: dict, selection: str) -> List[Tuple[s
                     continue
 
         all_chapters.append((title, cleaned))
-    print(all_chapters)
+
     return all_chapters
 
 
