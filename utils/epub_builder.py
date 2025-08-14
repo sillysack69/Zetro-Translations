@@ -37,6 +37,8 @@ class EpubBuilder:
         self._synopsis: Optional[str] = None
         self._alternate_title: Optional[str] = None
         self._extra_links: Optional[List[dict]] = None
+        self._genres: Optional[str] = None
+        self._translator: Optional[str] = None
 
         # New for image embedding
         self._images = {}
@@ -47,6 +49,12 @@ class EpubBuilder:
 
     def set_synopsis(self, synopsis: str):
         self._synopsis = synopsis
+
+    def set_genres(self, genres: str):
+        self._genres = genres
+
+    def set_translator(self, translator: str):
+        self._translator = translator
 
     def set_alternate_title(self, alt: str):
         self._alternate_title = alt
@@ -99,7 +107,7 @@ class EpubBuilder:
         soup = BeautifulSoup(html_content, "html.parser")
         for img_tag in soup.find_all("img"):
             src = img_tag.get("src")
-            src = src.split('?')[0]
+            src = (src or '').split('?')[0]
 
             if not src:
                 continue
@@ -123,11 +131,14 @@ class EpubBuilder:
         book.set_language(self.language)
         if self.author:
             book.add_author(self.author, role="aut", uid="author")
-
+        if self._translator:
+            book.add_author(self._translator, role="tlr", uid="translator")
         if self._synopsis:
             book.add_metadata('DC', 'description', self._synopsis)
         if self._alternate_title:
             book.add_metadata('DC', 'alternative', self._alternate_title)
+        if self._genres:
+            book.add_metadata('DC', 'subject', self._genres)
 
         # stylesheet
         css = """
@@ -164,6 +175,8 @@ class EpubBuilder:
             intro_content += f"<h3>Alternate Title: {self._alternate_title}</h3>"
         if self.author:
             intro_content += f"<h3>Author: {self.author}</h3>"
+        if self._translator:
+            intro_content += f"<h3>Translator: {self._translator}</h3>"
         if self._synopsis:
             intro_content += f"<p><strong>Synopsis:</strong> {self._synopsis}</p>"
         intro_content += links_html
